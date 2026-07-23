@@ -16,6 +16,7 @@ from app.routers.dashboard import router as dashboard_router
 from app.database import SessionLocal
 from app.services.auth_service import ensure_default_admin
 
+
 Base.metadata.create_all(bind=engine)
 
 with SessionLocal() as db:

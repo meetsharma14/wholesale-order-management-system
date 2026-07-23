@@ -1,4 +1,5 @@
 import { Box, Grid } from "@mui/material";
+import { useMemo } from "react";
 
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -15,10 +16,22 @@ import { formatCurrency } from "../../utils/format";
 
 export default function Payments() {
   const { data: payments, loading, error } = useApiResource("payments");
+  const { data: retailers } = useApiResource("retailers");
+
+  const retailerNames = useMemo(
+    () =>
+      new Map(
+        retailers.map((retailer) => [
+          retailer.id,
+          retailer.shop_name || retailer.owner_name || retailer.id,
+        ])
+      ),
+    [retailers]
+  );
 
   const rows = payments.map((payment) => ({
     ...payment,
-    retailer: payment.retailer_id,
+    retailer: retailerNames.get(payment.retailer_id) || payment.retailer_id,
     mode: payment.payment_method,
     amountLabel: formatCurrency(payment.amount),
     status: "Paid",

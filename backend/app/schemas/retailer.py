@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -12,7 +12,7 @@ class RetailerCreate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
-    credit_limit: float = 0
+    credit_limit: float = Field(default=0, ge=0)
 
 
 class RetailerResponse(RetailerCreate):

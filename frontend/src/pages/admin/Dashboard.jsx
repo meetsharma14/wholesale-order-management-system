@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [retailers, setRetailers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -31,16 +32,18 @@ export default function Dashboard() {
       setError("");
 
       try {
-        const [dashboardData, orderData, productData] = await Promise.all([
+        const [dashboardData, orderData, productData, retailerData] = await Promise.all([
           getDashboard(),
           getResource("orders"),
           getResource("products"),
+          getResource("retailers"),
         ]);
 
         if (isMounted) {
           setSummary(dashboardData);
           setOrders(orderData);
           setProducts(productData);
+          setRetailers(retailerData);
         }
       } catch (err) {
         if (isMounted) {
@@ -60,6 +63,17 @@ export default function Dashboard() {
     };
   }, []);
 
+  const retailerNames = useMemo(
+    () =>
+      new Map(
+        retailers.map((retailer) => [
+          retailer.id,
+          retailer.shop_name || retailer.owner_name || retailer.id,
+        ])
+      ),
+    [retailers]
+  );
+
   const topOrders = useMemo(
     () =>
       [...orders]
@@ -67,11 +81,11 @@ export default function Dashboard() {
         .slice(0, 3)
         .map((order) => ({
           id: order.id,
-          retailer: order.retailer_id,
+          retailer: retailerNames.get(order.retailer_id) || order.retailer_id,
           value: formatCurrency(order.total_amount),
           status: "Processing",
         })),
-    [orders]
+    [orders, retailerNames]
   );
 
   const stockAlerts = useMemo(

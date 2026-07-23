@@ -1,9 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PaymentCreate(BaseModel):
     retailer_id: str
-    amount: float
+    amount: float = Field(..., gt=0)
     payment_method: str
 
 

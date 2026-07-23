@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user
-from app.dependencies.roles import admin_required
+from app.dependencies.auth import (
+    get_current_user,
+    require_roles,
+    admin_required,
+)
 
 from app.schemas.payment import (
     PaymentCreate,
@@ -24,23 +27,28 @@ router = APIRouter(
 )
 
 
+# ADMIN + SALESMAN can create payments
 @router.post("/", response_model=PaymentResponse)
 def add_payment(
     payment: PaymentCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(admin_required),
+    current_user=Depends(
+        require_roles("ADMIN", "SALESMAN")
+    ),
 ):
     return create_payment(db, payment)
 
 
+# ADMIN + SALESMAN + RETAILER can view payments
 @router.get("/", response_model=list[PaymentResponse])
 def list_payments(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return get_payments(db)
+    return get_payments(db, current_user)
 
 
+# Any logged-in user can view a specific payment
 @router.get("/{payment_id}", response_model=PaymentResponse)
 def get_single_payment(
     payment_id: str,
@@ -58,6 +66,7 @@ def get_single_payment(
     return payment
 
 
+# ONLY ADMIN can update payments
 @router.put("/{payment_id}", response_model=PaymentResponse)
 def update_single_payment(
     payment_id: str,
@@ -65,7 +74,11 @@ def update_single_payment(
     db: Session = Depends(get_db),
     current_user=Depends(admin_required),
 ):
-    updated = update_payment(db, payment_id, payment)
+    updated = update_payment(
+        db,
+        payment_id,
+        payment,
+    )
 
     if not updated:
         raise HTTPException(
@@ -76,13 +89,17 @@ def update_single_payment(
     return updated
 
 
+# ONLY ADMIN can delete payments
 @router.delete("/{payment_id}")
 def delete_single_payment(
     payment_id: str,
     db: Session = Depends(get_db),
     current_user=Depends(admin_required),
 ):
-    deleted = delete_payment(db, payment_id)
+    deleted = delete_payment(
+        db,
+        payment_id,
+    )
 
     if not deleted:
         raise HTTPException(
@@ -90,4 +107,6 @@ def delete_single_payment(
             detail="Payment not found",
         )
 
-    return {"message": "Payment deleted successfully"}
+    return {
+        "message": "Payment deleted successfully"
+    }

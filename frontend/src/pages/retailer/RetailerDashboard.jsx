@@ -14,11 +14,14 @@ export default function RetailerDashboard() {
   const { data: orders } = useApiResource("orders");
   const { data: payments } = useApiResource("payments");
   const { data: products } = useApiResource("products");
+  const { data: retailers } = useApiResource("retailers");
 
   const orderTotal = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
   const paymentTotal = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const creditUsed = Math.max(0, orderTotal - paymentTotal);
-  const availableItems = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
+  const retailer = retailers[0];
+  const creditUsed = Number(retailer?.outstanding_balance ?? Math.max(0, orderTotal - paymentTotal));
+  const creditLimit = Number(retailer?.credit_limit || 0);
+  const creditAvailable = Math.max(0, creditLimit - creditUsed);
 
   return (
     <Box>
@@ -26,7 +29,7 @@ export default function RetailerDashboard() {
         <Box>
           <Typography variant="h4">Retailer Dashboard</Typography>
           <Typography color="text.secondary">
-            Reorder stock, track deliveries, and review account balance.
+            {retailer?.shop_name || "Reorder stock, track deliveries, and review account balance."}
           </Typography>
         </Box>
 
@@ -43,7 +46,7 @@ export default function RetailerDashboard() {
           <DashboardCard title="Credit Used" value={formatCurrency(creditUsed)} icon={<PaymentsIcon />} color="#ed6c02" />
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <DashboardCard title="Items Available" value={availableItems} icon={<InventoryIcon />} color="#2e7d32" />
+          <DashboardCard title="Credit Available" value={formatCurrency(creditAvailable)} icon={<InventoryIcon />} color="#2e7d32" />
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
           <DashboardCard title="Last Invoice" value={orders[0]?.id || "None"} icon={<ReceiptLongIcon />} color="#7b1fa2" />

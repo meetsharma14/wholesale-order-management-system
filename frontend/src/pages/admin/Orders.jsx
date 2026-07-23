@@ -24,10 +24,21 @@ export default function Orders() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const retailerNames = useMemo(
+    () =>
+      new Map(
+        retailers.map((retailer) => [
+          retailer.id,
+          retailer.shop_name || retailer.owner_name || retailer.id,
+        ])
+      ),
+    [retailers]
+  );
+
   const rows = orders.map((order) => ({
     ...order,
     orderId: order.id,
-    retailer: order.retailer_id,
+    retailer: retailerNames.get(order.retailer_id) || order.retailer_id,
     total: formatCurrency(order.total_amount),
     itemsCount: order.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0,
     status: "Processing",

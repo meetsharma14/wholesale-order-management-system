@@ -1,11 +1,49 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
-from app.models.salesman import Salesman
+from app.models.user import User, UserRole
 from app.schemas.salesman import SalesmanCreate
+from app.core.security import hash_password
 
 
-def create_salesman(db: Session, salesman: SalesmanCreate):
-    new_salesman = Salesman(**salesman.model_dump())
+def create_salesman(
+    db: Session,
+    salesman: SalesmanCreate,
+):
+    # Check email already exists
+    existing_email = (
+        db.query(User)
+        .filter(User.email == salesman.email)
+        .first()
+    )
+
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered",
+        )
+
+    # Check phone already exists
+    existing_phone = (
+        db.query(User)
+        .filter(User.phone == salesman.phone)
+        .first()
+    )
+
+    if existing_phone:
+        raise HTTPException(
+            status_code=400,
+            detail="Phone number already registered",
+        )
+
+    new_salesman = User(
+        name=salesman.name,
+        email=salesman.email,
+        phone=salesman.phone,
+        password=hash_password(salesman.password),
+        role=UserRole.SALESMAN,
+        is_active=True,
+    )
 
     db.add(new_salesman)
     db.commit()
@@ -15,13 +53,25 @@ def create_salesman(db: Session, salesman: SalesmanCreate):
 
 
 def get_salesmen(db: Session):
-    return db.query(Salesman).all()
+    return (
+        db.query(User)
+        .filter(User.role == UserRole.SALESMAN)
+        .all()
+    )
 
 
-def get_salesman(db: Session, salesman_id: str):
-    return db.query(Salesman).filter(
-        Salesman.id == salesman_id
-    ).first()
+def get_salesman(
+    db: Session,
+    salesman_id: str,
+):
+    return (
+        db.query(User)
+        .filter(
+            User.id == salesman_id,
+            User.role == UserRole.SALESMAN,
+        )
+        .first()
+    )
 
 
 def update_salesman(
@@ -34,8 +84,15 @@ def update_salesman(
     if not db_salesman:
         return None
 
-    for key, value in salesman.model_dump().items():
-        setattr(db_salesman, key, value)
+    db_salesman.name = salesman.name
+    db_salesman.email = salesman.email
+    db_salesman.phone = salesman.phone
+
+    # Update password only if provided
+    if salesman.password:
+        db_salesman.password = hash_password(
+            salesman.password
+        )
 
     db.commit()
     db.refresh(db_salesman)
@@ -43,7 +100,10 @@ def update_salesman(
     return db_salesman
 
 
-def delete_salesman(db: Session, salesman_id: str):
+def delete_salesman(
+    db: Session,
+    salesman_id: str,
+):
     salesman = get_salesman(db, salesman_id)
 
     if not salesman:

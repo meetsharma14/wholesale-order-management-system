@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.dependencies.auth import get_user_role
 from app.models.retailer import Retailer
 from app.schemas.retailer import RetailerCreate
 
@@ -14,7 +15,14 @@ def create_retailer(db: Session, retailer: RetailerCreate):
     return new_retailer
 
 
-def get_retailers(db: Session):
+def get_retailers(db: Session, current_user=None):
+    if current_user and get_user_role(current_user) == "RETAILER":
+        return (
+            db.query(Retailer)
+            .filter(Retailer.email == current_user.email)
+            .all()
+        )
+
     return db.query(Retailer).all()
 
 

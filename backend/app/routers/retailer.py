@@ -34,7 +34,7 @@ def list_retailers(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return get_retailers(db)
+    return get_retailers(db, current_user)
 
 
 @router.get("/{retailer_id}", response_model=RetailerResponse)
