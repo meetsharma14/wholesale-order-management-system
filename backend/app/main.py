@@ -32,7 +32,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://wholesale-order-management-system.onrender.com",
+        "https://wholesale-order-management-system-1.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
