@@ -55,6 +55,9 @@ export default function Login() {
     } catch (err) {
       setError(
         err.response?.data?.detail ||
+          (err.request
+            ? "Unable to reach the backend. Check VITE_API_BASE_URL and backend CORS settings."
+            : null) ||
           "Unable to login. Please check your credentials."
       );
     } finally {
